@@ -42,7 +42,7 @@
         </div>
 
         <!-- comenzar -->
-        <button>Comenzar partido</button>
+        <button @click="startGame">Comenzar partido</button>
     </div>
 </template>
 
@@ -112,5 +112,23 @@ function removeFromTeam(player, team) {
         teamB.value = teamB.value.filter(p => p.id !== player.id);
     }
     playerList.value.push(player);
+}
+
+function startGame(){
+    if (!date.value) {
+        alert('Seleccioná una fecha')
+        return;
+    }
+
+    if (teamA.value.length === 0 || teamB.value.length === 0){
+        alert('Faltan jugadores en los equipos');
+        return;
+    }
+
+    router.post(route('games.store'), {
+        date: date.value,
+        team_a: teamA.value,
+        team_b: teamB.value,
+    });
 }
 </script>
