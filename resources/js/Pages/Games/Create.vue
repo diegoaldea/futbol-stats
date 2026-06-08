@@ -13,7 +13,7 @@
         <div>
             <h2>Jugadores</h2>
             <div>
-                <span v-for="player in playerList" :key="player.id">
+                <span v-for="player in playerList" :key="player.id" @click="selectPlayer(player)" :style="selectedPlayer?.id === player.id ? 'background: lightblue' : ''">
                     {{ player.name }}
                 </span>
             </div>
@@ -27,11 +27,17 @@
 
         <!-- equipos -->
         <div>
-            <div>
+            <div @click="assignToTeam('a')">
                 <h2>Equipo A</h2>
+                <span v-for="player in teamA" :key="player.id" @click.stop="removeFromTeam(player, 'a')">
+                    {{ player.name }}
+                </span>
             </div>
-            <div>
+            <div @click="assignToTeam('b')">
                 <h2>Equipo B</h2>
+                <span v-for="player in teamB" :key="player.id" @click.stop="removeFromTeam(player, 'b')">
+                    {{ player.name }}
+                </span>
             </div>
         </div>
 
@@ -56,6 +62,8 @@ const teamB = ref([]);
 const showAddPlayer = ref(false);
 const newPlayerName = ref('');
 
+const selectedPlayer = ref(null);
+
 function confirmCancel(){
     if(confirm('¿Estas seguro que queres salir?')){
         router.visit(route('home'));
@@ -74,4 +82,35 @@ async function addPlayer() {
     showAddPlayer.value = false;
 }
 
+function selectPlayer(player){
+    if (selectedPlayer.value?.id === player.id){
+        selectedPlayer.value = null;
+    }
+    else {
+        selectedPlayer.value = player;
+    }
+}
+
+function assignToTeam(team){
+    if (!selectedPlayer.value) return;
+
+    if(team === 'a'){
+        teamA.value.push(selectedPlayer.value);
+    }
+    else{
+        teamB.value.push(selectedPlayer.value);
+    }
+
+    playerList.value = playerList.value.filter(p => p.id !== selectedPlayer.value.id);
+    selectedPlayer.value = null;
+}
+
+function removeFromTeam(player, team) {
+    if (team === 'a') {
+        teamA.value = teamA.value.filter(p => p.id !== player.id);
+    } else {
+        teamB.value = teamB.value.filter(p => p.id !== player.id);
+    }
+    playerList.value.push(player);
+}
 </script>
