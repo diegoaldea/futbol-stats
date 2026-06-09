@@ -2,7 +2,7 @@
     <div>
         <!-- Marcador -->
         <div>
-            <h1>Equipo A {{ game.score_team_a }} - {{ game.score_team_b }} Equipo B</h1>
+            <h1>Equipo A {{ score.team_a }} - {{ score.team_b }} Equipo B</h1>
         </div>
 
         <!-- Equipos -->
@@ -78,6 +78,11 @@ const showModal = ref(false);
 
 const hoveredStat = ref(null);
 
+const score = ref({
+    team_a: props.game.score_team_a,
+    team_b: props.game.score_team_b,
+});
+
 function openModal(gamePlayer) {
     selectedPlayer.value = gamePlayer;
     showModal.value = true;
@@ -95,8 +100,10 @@ async function updateStat(gamePlayerId, statId, action) {
         action: action,
     });
     
-    updateLocalStat(gamePlayerId, statId, response.data);
-
+    updateLocalStat(gamePlayerId, statId, response.data.gameStat);
+    score.value.team_a = response.data.game.score_team_a;
+    score.value.team_b = response.data.game.score_team_b;
+    
     if (action === 'add' && showModal.value) {
         closeModal();
     }

@@ -96,7 +96,21 @@ class GameController extends Controller
             }
         }
 
-        return response()->json($gameStat);
+        // Actualizar marcador si la stat es un gol
+        $stat = \App\Models\Stat::find($request->stat_id);
+        if (strtolower($stat->name) === 'gol') {
+            $gamePlayer = GamePlayer::find($request->game_player_id);
+            if ($gamePlayer->team === 'a') {
+                $request->action === 'add' ? $game->increment('score_team_a') : $game->decrement('score_team_a');
+            } else {
+                $request->action === 'add' ? $game->increment('score_team_b') : $game->decrement('score_team_b');
+            }
+        }
+
+        return response()->json([
+            'gameStat' => $gameStat,
+            'game' => $game->fresh(),
+        ]);
     }
 
     public function edit(string $id)
