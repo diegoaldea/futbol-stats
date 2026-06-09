@@ -18,5 +18,7 @@ Route::get('/games/{game}', [GameController::class, 'show'])->name('games.show')
 
 Route::post('/players', [PlayerController::class, 'store'])->name('players.store');
 
+Route::post('/games/{game}/stats', [GameController::class, 'addStat'])->name('games.stats.add');
+
 
 require __DIR__.'/auth.php';

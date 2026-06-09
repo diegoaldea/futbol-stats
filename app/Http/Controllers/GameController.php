@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Game;
 use App\Models\GamePlayer;
+use App\Models\GamePlayerStat;
 
 class GameController extends Controller
 {
@@ -64,12 +65,38 @@ class GameController extends Controller
         
         $teamA = $game->gamePlayers()->where('team', 'a')->with('player')->get();
         $teamB = $game->gamePlayers()->where('team', 'b')->with('player')->get();
+        $stats = \App\Models\Stat::where('is_global', true)->with('category')->get();
 
         return Inertia::render('Games/Show', [
             'game' => $game,
             'teamA' => $teamA,
             'teamB' => $teamB,
+            'stats' => $stats,
         ]);
+    }
+
+    public function addStat(Request $request, Game $game)
+    {
+        $request->validate([
+            'game_player_id' => 'required|exists:game_players,id',
+            'stat_id' => 'required|exists:stats,id',
+            'action' => 'required|in:add,subtract',
+        ]);
+
+        $gameStat = GamePlayerStat::firstOrCreate([
+            'game_player_id' => $request->game_player_id,
+            'stat_id' => $request->stat_id,
+        ], ['value' => 0]);
+
+        if ($request->action === 'add') {
+            $gameStat->increment('value');
+        } else {
+            if ($gameStat->value > 0) {
+                $gameStat->decrement('value');
+            }
+        }
+
+        return response()->json($gameStat);
     }
 
     public function edit(string $id)
