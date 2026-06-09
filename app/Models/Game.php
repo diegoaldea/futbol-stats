@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\GamePlayer;
 
 class Game extends Model
 {
@@ -26,5 +27,10 @@ class Game extends Model
     public function isGuest(): bool
     {
         return $this->user_id === null;
+    }
+
+    public function gamePlayers()
+    {
+        return $this->hasMany(GamePlayer::class);
     }
 }
