@@ -7,6 +7,7 @@
         <!-- Crear estadística -->
         <form @submit.prevent="createStat">
             <input v-model="statForm.name" type="text" placeholder="Nombre" />
+            <input v-model="statForm.description" type="text" placeholder="Descripción (opcional)" />
             <select v-model="statForm.stat_category_id">
                 <option :value="null" disabled>Categoría</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -22,6 +23,7 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
+                    <th>Descripción</th>
                     <th>Categoría</th>
                     <th>Puntos</th>
                     <th></th>
@@ -31,6 +33,7 @@
                 <tr v-for="stat in stats" :key="stat.id">
                     <template v-if="editingStatId === stat.id">
                         <td><input v-model="editStatForm.name" type="text" /></td>
+                        <td><input v-model="editStatForm.description" type="text" /></td>
                         <td>
                             <select v-model="editStatForm.stat_category_id">
                                 <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -46,6 +49,7 @@
                     </template>
                     <template v-else>
                         <td>{{ stat.name }}</td>
+                        <td>{{ stat.description }}</td>
                         <td>{{ stat.category?.name }}</td>
                         <td>{{ stat.points }}</td>
                         <td>
@@ -111,6 +115,7 @@ defineProps({
 // --- Estadísticas ---
 const statForm = useForm({
     name: '',
+    description: '',
     stat_category_id: null,
     points: 0,
 });
@@ -123,11 +128,12 @@ function createStat() {
 }
 
 const editingStatId = ref(null);
-const editStatForm = reactive({ name: '', stat_category_id: null, points: 0 });
+const editStatForm = reactive({ name: '', description: '', stat_category_id: null, points: 0 });
 
 function startEditStat(stat) {
     editingStatId.value = stat.id;
     editStatForm.name = stat.name;
+    editStatForm.description = stat.description ?? '';
     editStatForm.stat_category_id = stat.stat_category_id;
     editStatForm.points = stat.points;
 }

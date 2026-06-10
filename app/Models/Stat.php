@@ -8,6 +8,7 @@ class Stat extends Model
 {
     protected $fillable = [
     'name',
+    'description',
     'stat_category_id',
     'points',
     'is_global',

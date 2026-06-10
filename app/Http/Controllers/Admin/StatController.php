@@ -49,6 +49,7 @@ class StatController extends Controller
     {
         return $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:255',
             'stat_category_id' => 'required|exists:stat_categories,id',
             'points' => 'required|numeric',
         ]);
