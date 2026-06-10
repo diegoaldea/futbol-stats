@@ -11,6 +11,26 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/stats', [\App\Http\Controllers\Admin\StatController::class, 'index'])->name('stats.index');
+    Route::post('/stats', [\App\Http\Controllers\Admin\StatController::class, 'store'])->name('stats.store');
+    Route::put('/stats/{stat}', [\App\Http\Controllers\Admin\StatController::class, 'update'])->name('stats.update');
+    Route::delete('/stats/{stat}', [\App\Http\Controllers\Admin\StatController::class, 'destroy'])->name('stats.destroy');
+
+    Route::post('/categories', [\App\Http\Controllers\Admin\StatCategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{statCategory}', [\App\Http\Controllers\Admin\StatCategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{statCategory}', [\App\Http\Controllers\Admin\StatCategoryController::class, 'destroy'])->name('categories.destroy');
+
+    Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
+
+    Route::get('/games', [\App\Http\Controllers\Admin\GameController::class, 'index'])->name('games.index');
+    Route::delete('/games/{game}', [\App\Http\Controllers\Admin\GameController::class, 'destroy'])->name('games.destroy');
+});
+
 Route::get('/', [GameController::class, 'index'])->name('home');
 Route::get('/games/create', [GameController::class, 'create'])->name('games.create');
 Route::post('/games', [GameController::class, 'store'])->name('games.store');

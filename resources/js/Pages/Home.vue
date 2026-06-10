@@ -2,6 +2,8 @@
     <div>
         <Link :href="route('games.create')" class="bg-blue-400 p-2">Crear Partido</Link>
 
+        <Link v-if="isAdmin" :href="route('admin.dashboard')">Panel de administración</Link>
+
         <div v-if="!isGuest">
             <h1>Mis Partidos</h1>
 
@@ -33,6 +35,7 @@ defineProps({
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
+const isAdmin = computed(() => page.props.auth.user?.role === 'admin');
 
 function formatDate(date) {
     return new Date(date).toLocaleDateString('es-AR');
