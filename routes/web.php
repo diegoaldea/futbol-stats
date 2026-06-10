@@ -19,6 +19,8 @@ Route::get('/games/{game}', [GameController::class, 'show'])->name('games.show')
 Route::post('/players', [PlayerController::class, 'store'])->name('players.store');
 
 Route::post('/games/{game}/stats', [GameController::class, 'addStat'])->name('games.stats.add');
+Route::post('/games/{game}/finish', [GameController::class, 'finish'])->name('games.finish');
+Route::get('/games/{game}/summary', [GameController::class, 'summary'])->name('games.summary');
 
 
 require __DIR__.'/auth.php';

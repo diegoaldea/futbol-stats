@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\GamePlayerStat;
 
 class GamePlayer extends Model
 {
@@ -21,4 +22,11 @@ class GamePlayer extends Model
     {
         return $this->belongsTo(Player::class);
     }
+
+    public function stats()
+    {
+        return $this->hasMany(GamePlayerStat::class);
+    }
+
+    
 }
