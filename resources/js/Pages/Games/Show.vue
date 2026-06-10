@@ -61,10 +61,13 @@
             <button @click="closeModal">Cerrar</button>
         </div>
     </div>
+
+    <button @click="finishGame">Finalizar partido</button>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     game: Object,
@@ -111,6 +114,13 @@ async function updateStat(gamePlayerId, statId, action) {
 
 const playerStats = ref({});
 
+// Inicializar con las stats que ya existen en la base de datos
+[...props.teamA, ...props.teamB].forEach((gamePlayer) => {
+    gamePlayer.stats?.forEach((stat) => {
+        playerStats.value[`${gamePlayer.id}-${stat.stat_id}`] = stat;
+    });
+});
+
 function getPlayerStat(gamePlayerId, statId) {
     const key = `${gamePlayerId}-${statId}`;
     return playerStats.value[key]?.value ?? 0;
@@ -119,5 +129,12 @@ function getPlayerStat(gamePlayerId, statId) {
 function updateLocalStat(gamePlayerId, statId, data) {
     const key = `${gamePlayerId}-${statId}`;
     playerStats.value[key] = data;
+}
+
+async function finishGame() {
+    if (confirm('¿Estás seguro que querés finalizar el partido?')) {
+        await axios.post(route('games.finish', props.game.id));
+        router.visit(route('games.summary', props.game.id));
+    }
 }
 </script>

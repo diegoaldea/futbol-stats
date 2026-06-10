@@ -12,7 +12,13 @@ class GameController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Home');
+        $games = auth()->check()
+            ? auth()->user()->games()->latest('date')->get()
+            : collect([]);
+
+        return Inertia::render('Home', [
+            'games' => $games,
+        ]);
     }
 
     public function create()
@@ -63,8 +69,8 @@ class GameController extends Controller
     {
         $game = Game::where('id', $id)->orWhere('token', $id)->firstOrFail();
         
-        $teamA = $game->gamePlayers()->where('team', 'a')->with('player')->get();
-        $teamB = $game->gamePlayers()->where('team', 'b')->with('player')->get();
+        $teamA = $game->gamePlayers()->where('team', 'a')->with(['player', 'stats'])->get();
+        $teamB = $game->gamePlayers()->where('team', 'b')->with(['player', 'stats'])->get();
         $stats = \App\Models\Stat::where('is_global', true)->with('category')->get();
 
         return Inertia::render('Games/Show', [
@@ -110,6 +116,23 @@ class GameController extends Controller
         return response()->json([
             'gameStat' => $gameStat,
             'game' => $game->fresh(),
+        ]);
+    }
+
+    public function finish(Game $game)
+    {
+        return response()->json(['success' => true]);
+    }
+
+    public function summary(Game $game)
+    {
+        $teamA = $game->gamePlayers()->where('team', 'a')->with(['player', 'stats.stat'])->get();
+        $teamB = $game->gamePlayers()->where('team', 'b')->with(['player', 'stats.stat'])->get();
+
+        return Inertia::render('Games/Summary', [
+            'game' => $game,
+            'teamA' => $teamA,
+            'teamB' => $teamB,
         ]);
     }
 
