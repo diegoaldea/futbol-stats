@@ -54,7 +54,7 @@
         <div v-if="showModal">
             <h2>{{ selectedPlayer.player.name }}</h2>
             <ul>
-                <li v-for="stat in stats" :key="stat.id" @click="updateStat(selectedPlayer.id, stat.id, 'add')">
+                <li v-for="stat in availableStats" :key="stat.id" @click="updateStat(selectedPlayer.id, stat.id, 'add')">
                     {{ stat.name }}
                 </li>
             </ul>
@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -84,6 +84,12 @@ const hoveredStat = ref(null);
 const score = ref({
     team_a: props.game.score_team_a,
     team_b: props.game.score_team_b,
+});
+
+// Stats que el jugador seleccionado todavía no tiene (las ya cargadas no se muestran)
+const availableStats = computed(() => {
+    if (!selectedPlayer.value) return [];
+    return props.stats.filter((stat) => getPlayerStat(selectedPlayer.value.id, stat.id) === 0);
 });
 
 function openModal(gamePlayer) {
