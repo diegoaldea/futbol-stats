@@ -32,10 +32,13 @@ defineProps({
     teamB: Array,
 });
 
+// Todos los jugadores arrancan el partido con esta puntuación base
+const BASE_SCORE = 6.0;
+
 function playerScore(gamePlayer) {
     const total = (gamePlayer.stats ?? []).reduce(
         (sum, stat) => sum + stat.value * Number(stat.stat.points),
-        0
+        BASE_SCORE
     );
 
     // Evitar decimales colgando (ej. 3.00 -> 3, 2.50 -> 2.5)
