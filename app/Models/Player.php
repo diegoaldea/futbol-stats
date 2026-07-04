@@ -21,5 +21,10 @@ class Player extends Model
     {
         return $this->belongsTo(User::class, 'linked_user_id');
     }
+
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class);
+    }
 }
         
