@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temporada — Estadísticas</title>
+<style>
+  :root{
+    --bg:#0d1117;--surface:#161b22;--surface-2:#1c2430;--line:#2a3441;
+    --txt:#e6edf3;--txt-dim:#8b98a5;--accent:#4cc38a;--neg:#f0616d;
+    --polcik:#4c8cff;--rubios:#e8a13a;--radius:12px;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:var(--font);padding:16px;max-width:760px;margin:0 auto;font-size:15px;-webkit-font-smoothing:antialiased}
+  h1{font-size:20px;margin-bottom:2px}
+  .subtitle{color:var(--txt-dim);font-size:13px;margin-bottom:16px}
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:4px;margin-bottom:16px;overflow-x:auto}
+  .tab{flex:1;white-space:nowrap;padding:10px 10px;text-align:center;font-size:13px;font-weight:600;color:var(--txt-dim);background:none;border:none;border-radius:8px;cursor:pointer;font-family:var(--font)}
+  .tab.active{background:var(--surface-2);color:var(--txt)}
+  .panel{display:none}.panel.active{display:block}
+  .toggle{display:inline-flex;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px;margin-bottom:12px}
+  .toggle button{padding:6px 14px;font-size:12px;font-weight:600;color:var(--txt-dim);background:none;border:none;border-radius:6px;cursor:pointer;font-family:var(--font)}
+  .toggle button.active{background:var(--surface-2);color:var(--txt)}
+  .row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer}
+  .row:hover{border-color:var(--accent)}
+  .pos{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--txt-dim);width:22px;text-align:center}
+  .pos.t1{color:#f5c451}.pos.t2{color:#c4cdd6}.pos.t3{color:#cd8a52}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .name{flex:1;font-weight:600}
+  .name .sub{font-size:12px;color:var(--txt-dim);font-weight:400}
+  .big{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--accent)}
+  .sm{font-size:11px;color:var(--txt-dim);text-align:right}
+  select{background:var(--surface-2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:13px;font-weight:600;width:100%;margin-bottom:12px}
+  .barrow{margin-bottom:9px}
+  .barlab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .barlab .v{font-family:var(--mono);font-weight:600}
+  .track{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+  .fill{height:100%;border-radius:4px}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;align-items:flex-end;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:760px;max-height:88vh;overflow-y:auto;padding:20px}
+  .mhead{display:flex;justify-content:space-between;align-items:center}
+  .mname{font-size:22px;font-weight:700}
+  .mclose{background:var(--surface-2);border:none;color:var(--txt);width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer}
+  .mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+  .mstat{background:var(--surface-2);border-radius:10px;padding:10px;text-align:center}
+  .mstat .n{font-family:var(--mono);font-size:20px;font-weight:600}
+  .mstat .l{font-size:10px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
+  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt-dim);font-weight:600;margin:16px 0 8px}
+  .spark{display:flex;align-items:flex-end;gap:6px;height:90px;padding:10px;background:var(--surface-2);border-radius:10px}
+  .sparkbar{flex:1;background:var(--accent);border-radius:3px 3px 0 0;position:relative;min-height:4px;display:flex;align-items:flex-start;justify-content:center}
+  .sparkbar span{font-family:var(--mono);font-size:10px;color:var(--txt);position:absolute;top:-16px;font-weight:600}
+  .sparkbar small{font-size:9px;color:var(--txt-dim);position:absolute;bottom:-16px}
+  .fila{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+  .fila:last-child{border:none}
+  .fila-r{display:flex;align-items:center;gap:10px}
+  .fila-c{font-family:var(--mono);font-weight:600;min-width:60px;text-align:right}
+  .fila-rk{font-size:10px;color:var(--txt-dim);background:var(--surface-2);padding:2px 7px;border-radius:20px;min-width:48px;text-align:center}
+  .fila-rk.best{background:rgba(76,195,138,.15);color:var(--accent)}
+  th,td{text-align:left;padding:9px 8px;font-size:13px}
+  th{color:var(--txt-dim);font-weight:600;border-bottom:1px solid var(--line)}
+  td{border-bottom:1px solid var(--line)}
+  td.num,th.num{text-align:right;font-family:var(--mono)}
+  table{width:100%;border-collapse:collapse}
+</style>
+</head>
+<body>
+<h1>Estadísticas de temporada</h1>
+<div class="subtitle" id="sub"></div>
+
+<div class="tabs">
+  <button class="tab active" data-p="ranking">Ranking</button>
+  <button class="tab" data-p="goleadores">Goleadores</button>
+  <button class="tab" data-p="lideres">Por estadística</button>
+  <button class="tab" data-p="comparar">Comparar</button>
+</div>
+
+<div id="ranking" class="panel active">
+  <div class="toggle"><button class="active" data-m="prom">Promedio</button><button data-m="tot">Total acumulado</button></div>
+  <div id="rankList"></div>
+  <div id="rankFew"></div>
+</div>
+
+<div id="goleadores" class="panel">
+  <table><thead><tr><th>#</th><th>Jugador</th><th class="num">Goles</th><th class="num">Asist.</th><th class="num">G+A</th><th class="num">G/part</th></tr></thead><tbody id="golTable"></tbody></table>
+</div>
+
+<div id="lideres" class="panel">
+  <select id="statSel"></select>
+  <div class="toggle"><button class="active" data-lm="tot">Total</button><button data-lm="prom">Promedio/partido</button></div>
+  <div id="lideresList"></div>
+</div>
+
+<div id="comparar" class="panel">
+  <div style="display:flex;gap:8px"><select id="cmpA"></select><select id="cmpB"></select></div>
+  <div id="cmpOut"></div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+<script>
+const SEASON = {"diego": {"team": "Polcik SC", "matches": [{"stats": {"Disparo al arco": 7, "Atajada": 2, "Pase incompleto": 8, "Buen pase": 4, "Ocasion creada": 3, "Disparo afuera": 2, "Intercepcion": 3, "Conduccion progresiva": 3, "Pase progresivo": 6, "Duelo ganado": 6, "Asistencia": 1, "Recuperacion": 3, "Mal pase": 2, "Gambeta exitosa": 2, "Gol": 1}, "rating": 13.95, "acciones": 53}, {"stats": {"Disparo al arco": 8, "Atajada": 3, "Pase incompleto": 12, "Buen pase": 13, "Ocasion creada": 4, "Disparo afuera": 5, "Intercepcion": 11, "Conduccion progresiva": 5, "Pase progresivo": 13, "Duelo ganado": 6, "Asistencia": 2, "Recuperacion": 4, "Mal pase": 2, "Gambeta exitosa": 3, "Gol": 2, "Gran ocasion fallida": 1}, "rating": 20.4, "acciones": 94}, {"stats": {"Disparo al arco": 14, "Atajada": 5, "Pase incompleto": 13, "Buen pase": 12, "Ocasion creada": 5, "Disparo afuera": 5, "Intercepcion": 10, "Conduccion progresiva": 5, "Pase progresivo": 20, "Duelo ganado": 11, "Asistencia": 3, "Recuperacion": 8, "Mal pase": 4, "Gambeta exitosa": 3, "Gol": 2, "Gran ocasion fallida": 1}, "rating": 24.55, "acciones": 121}]}, "nahuel": {"team": "Polcik SC", "matches": [{"stats": {"Mal pase": 4, "Disparo afuera": 4, "Pase incompleto": 7, "Buen pase": 4, "Asistencia": 2, "Duelo ganado": 4, "Gambeta exitosa": 2, "Intercepcion": 2, "Recuperacion": 1, "Ocasion creada": 1, "Disparo al arco": 4, "Pase progresivo": 7, "Atajada": 1, "Perdida de posesion": 1, "Despeje": 1}, "rating": 10.75, "acciones": 45}, {"stats": {"Mal pase": 4, "Disparo afuera": 4, "Pase incompleto": 12, "Buen pase": 3, "Asistencia": 2, "Bloqueo": 1, "Duelo ganado": 5, "Gambeta exitosa": 4, "Intercepcion": 4, "Recuperacion": 2, "Ocasion creada": 2, "Disparo al arco": 4, "Conduccion progresiva": 1, "Pase progresivo": 12, "Atajada": 1, "Perdida de posesion": 1, "Despeje": 1}, "rating": 12.55, "acciones": 63}, {"stats": {"Mal pase": 6, "Disparo afuera": 5, "Pase incompleto": 12, "Buen pase": 7, "Asistencia": 2, "Bloqueo": 1, "Duelo ganado": 5, "Gambeta exitosa": 4, "Intercepcion": 5, "Recuperacion": 3, "Ocasion creada": 2, "Disparo al arco": 6, "Conduccion progresiva": 1, "Pase progresivo": 11, "Atajada": 2, "Perdida de posesion": 1, "Despeje": 1}, "rating": 13.75, "acciones": 74}]}, "viktor": {"team": "Polcik SC", "matches": [{"stats": {"Pase incompleto": 3, "Duelo ganado": 2, "Disparo al arco": 5, "Intercepcion": 4, "Disparo afuera": 3, "Gol": 4, "Buen pase": 2, "Recuperacion alta": 1, "Gambeta exitosa": 1, "Mal pase": 2, "Atajada": 1, "Perdida de posesion": 1, "Pase progresivo": 2, "Bloqueo": 2, "Conduccion progresiva": 2, "Presion": 1, "Despeje": 1}, "rating": 14.5, "acciones": 37}, {"stats": {"Pase incompleto": 7, "Recuperacion": 1, "Duelo ganado": 3, "Disparo al arco": 4, "Intercepcion": 7, "Disparo afuera": 6, "Gol": 3, "Buen pase": 3, "Ocasion creada": 1, "Recuperacion alta": 1, "Gambeta exitosa": 1, "Gran ocasion fallida": 1, "Mal pase": 2, "Atajada": 1, "Perdida de posesion": 1, "Pase progresivo": 3, "Bloqueo": 3, "Conduccion progresiva": 2, "Ejecucion excepcional": 1, "Presion": 1, "Despeje": 1, "Mala resolucion": 1}, "rating": 14.2, "acciones": 54}, {"stats": {"Pase incompleto": 8, "Recuperacion": 1, "Duelo ganado": 6, "Disparo al arco": 7, "Intercepcion": 7, "Disparo afuera": 6, "Gol": 6, "Buen pase": 3, "Ocasion creada": 1, "Recuperacion alta": 1, "Gambeta exitosa": 1, "Gran ocasion fallida": 1, "Mal pase": 4, "Atajada": 2, "Perdida de posesion": 1, "Pase progresivo": 3, "Bloqueo": 4, "Conduccion progresiva": 2, "Ejecucion excepcional": 1, "Presion": 1, "Despeje": 1, "Mala resolucion": 1}, "rating": 18.85, "acciones": 68}]}, "ayrton": {"team": "Polcik SC", "matches": [{"stats": {"Intercepcion": 1, "Pase incompleto": 4, "Duelo ganado": 5, "Buen pase": 1, "Mal pase": 1, "Disparo al arco": 3, "Burrada historica": 1, "Ocasion creada": 2, "Asistencia": 2, "Pase progresivo": 3, "Gol": 2, "Mala resolucion": 2, "Recuperacion": 1, "Atajada": 1, "Gol en contra": 1, "Disparo afuera": 1, "Burrada no grave": 1}, "rating": 10.65, "acciones": 32}, {"stats": {"Intercepcion": 1, "Pase incompleto": 7, "Duelo ganado": 4, "Buen pase": 2, "Mal pase": 1, "Disparo al arco": 3, "Burrada historica": 1, "Ocasion creada": 3, "Asistencia": 2, "Pase progresivo": 4, "Gol": 2, "Mala resolucion": 2, "Recuperacion": 1, "Atajada": 1, "Gol en contra": 1, "Disparo afuera": 2, "Burrada no grave": 1}, "rating": 10.85, "acciones": 38}, {"stats": {"Intercepcion": 2, "Pase incompleto": 12, "Duelo ganado": 7, "Buen pase": 2, "Mal pase": 2, "Disparo al arco": 4, "Burrada historica": 3, "Ocasion creada": 3, "Asistencia": 3, "Pase progresivo": 5, "Gol": 3, "Mala resolucion": 2, "Recuperacion": 1, "Atajada": 1, "Gol en contra": 1, "Disparo afuera": 3, "Burrada no grave": 1}, "rating": 12.55, "acciones": 55}]}, "marian": {"team": "Polcik SC", "matches": [{"stats": {"Gol": 1, "Pase progresivo": 12, "Falta cometida": 1, "Intercepcion": 2, "Gambeta exitosa": 1, "Duelo ganado": 4, "Disparo al arco": 5, "Bloqueo": 1, "Ocasion creada": 1, "Atajada": 3, "Pase incompleto": 2, "Gol evitado": 1, "Recuperacion": 1, "Disparo afuera": 2}, "rating": 12.0, "acciones": 37}, {"stats": {"Gol": 1, "Pase progresivo": 10, "Falta cometida": 1, "Intercepcion": 4, "Gambeta exitosa": 1, "Duelo ganado": 10, "Disparo al arco": 8, "Buen pase": 1, "Bloqueo": 1, "Ocasion creada": 2, "Atajada": 3, "Pase incompleto": 5, "Gol evitado": 1, "Recuperacion": 2, "Disparo afuera": 1, "Mal pase": 1}, "rating": 14.0, "acciones": 52}, {"stats": {"Gol": 2, "Pase progresivo": 14, "Falta cometida": 2, "Recuperacion alta": 1, "Intercepcion": 4, "Gambeta exitosa": 1, "Duelo ganado": 14, "Disparo al arco": 9, "Buen pase": 1, "Bloqueo": 2, "Ocasion creada": 3, "Atajada": 4, "Pase incompleto": 5, "Gol evitado": 2, "Recuperacion": 2, "Disparo afuera": 2, "Mal pase": 1}, "rating": 17.6, "acciones": 69}]}, "fede": {"team": "Rubios de Moreno", "matches": [{"stats": {"Gambeta exitosa": 3, "Pase progresivo": 4, "Gol": 2, "Intercepcion": 3, "Pase incompleto": 3, "Mal pase": 1, "Error de gol": 1, "Atajada": 4, "Perdida de posesion": 2, "Duelo ganado": 7, "Buen pase": 2, "Asistencia": 1, "Ocasion creada": 1, "Disparo al arco": 1, "Recuperacion": 1, "Cano": 1}, "rating": 12.75, "acciones": 37}, {"stats": {"Gambeta exitosa": 6, "Pase progresivo": 5, "Gol": 2, "Intercepcion": 4, "Pase incompleto": 4, "Mal pase": 2, "Error de gol": 1, "Atajada": 6, "Perdida de posesion": 2, "Duelo ganado": 8, "Buen pase": 3, "Asistencia": 2, "Ocasion creada": 1, "Disparo al arco": 2, "Recuperacion": 2, "Cano": 1, "Disparo afuera": 1}, "rating": 15.3, "acciones": 52}, {"stats": {"Gambeta exitosa": 6, "Pase progresivo": 7, "Gol": 2, "Intercepcion": 4, "Pase incompleto": 4, "Mal pase": 3, "Error de gol": 1, "Atajada": 8, "Perdida de posesion": 3, "Duelo ganado": 9, "Buen pase": 4, "Asistencia": 3, "Ocasion creada": 2, "Disparo al arco": 2, "Recuperacion": 2, "Cano": 1, "Disparo afuera": 1}, "rating": 17.0, "acciones": 62}]}, "nacho": {"team": "Rubios de Moreno", "matches": [{"stats": {"Bloqueo": 2, "Pase incompleto": 4, "Intercepcion": 3, "Atajada": 1, "Error de gol": 1, "Mal pase": 3, "Duelo ganado": 7, "Disparo al arco": 3, "Gol": 1, "Pase progresivo": 1, "Gran ocasion fallida": 1, "Despeje": 1, "Buen pase": 2, "Ocasion creada": 1, "Gambeta exitosa": 1, "Cano": 1, "Perdida de posesion": 1}, "rating": 9.5, "acciones": 34}, {"stats": {"Bloqueo": 3, "Pase incompleto": 6, "Intercepcion": 6, "Atajada": 1, "Mal pase": 2, "Duelo ganado": 9, "Disparo al arco": 2, "Gol": 1, "Pase progresivo": 1, "Gran ocasion fallida": 1, "Despeje": 2, "Buen pase": 2, "Ocasion creada": 1, "Gambeta exitosa": 1, "Cano": 1, "Disparo afuera": 1, "Perdida de posesion": 1, "Mala resolucion": 1, "Burrada historica": 1}, "rating": 10.6, "acciones": 43}, {"stats": {"Bloqueo": 5, "Pase incompleto": 7, "Intercepcion": 6, "Atajada": 1, "Error de gol": 1, "Mal pase": 4, "Duelo ganado": 12, "Disparo al arco": 4, "Gol": 2, "Pase progresivo": 3, "Gran ocasion fallida": 1, "Despeje": 2, "Buen pase": 2, "Ocasion creada": 1, "Gambeta exitosa": 1, "Cano": 1, "Disparo afuera": 1, "Perdida de posesion": 1, "Mala resolucion": 1, "Burrada historica": 1}, "rating": 12.2, "acciones": 57}]}, "Tuti": {"team": "Rubios de Moreno", "matches": [{"stats": {"Mal pase": 5, "Disparo al arco": 2, "Pase incompleto": 4, "Intercepcion": 3, "Duelo ganado": 4, "Pase progresivo": 2, "Bloqueo": 1, "Recuperacion": 2, "Perdida de posesion": 1, "Burrada historica": 1, "Gol": 2, "Disparo afuera": 2, "Buen pase": 2, "Atajada": 1, "Gol evitado": 1, "Gran ocasion fallida": 2, "Cano": 1, "Mala resolucion": 1}, "rating": 9.7, "acciones": 37}, {"stats": {"Mal pase": 12, "Disparo al arco": 3, "Pase incompleto": 6, "Intercepcion": 9, "Duelo ganado": 14, "Pase progresivo": 3, "Bloqueo": 3, "Recuperacion": 3, "Perdida de posesion": 1, "Burrada historica": 1, "Gol": 2, "Disparo afuera": 4, "Buen pase": 2, "Ocasion creada": 1, "Atajada": 1, "Gol evitado": 1, "Gran ocasion fallida": 2, "Cano": 1}, "rating": 12.4, "acciones": 69}, {"stats": {"Mal pase": 11, "Disparo al arco": 5, "Pase incompleto": 8, "Intercepcion": 8, "Duelo ganado": 14, "Pase progresivo": 5, "Bloqueo": 4, "Recuperacion": 4, "Perdida de posesion": 2, "Burrada historica": 1, "Gol": 3, "Disparo afuera": 4, "Buen pase": 4, "Ocasion creada": 1, "Atajada": 2, "Conduccion progresiva": 1, "Gol evitado": 1, "Gran ocasion fallida": 2, "Cano": 1, "Mala resolucion": 1}, "rating": 14.9, "acciones": 82}]}, "Agus": {"team": "Rubios de Moreno", "matches": [{"stats": {"Bloqueo": 3, "Pase progresivo": 2, "Pase incompleto": 5, "Despeje": 6, "Mal pase": 2, "Atajada": 1, "Duelo ganado": 7, "Buen pase": 2, "Asistencia": 1, "Intercepcion": 4, "Gol": 1, "Perdida de posesion": 1, "Gol evitado": 1}, "rating": 11.3, "acciones": 36}, {"stats": {"Bloqueo": 11, "Pase progresivo": 7, "Pase incompleto": 11, "Despeje": 5, "Mal pase": 3, "Atajada": 2, "Duelo ganado": 5, "Buen pase": 1, "Asistencia": 1, "Intercepcion": 6, "Disparo al arco": 1, "Gol": 1, "Perdida de posesion": 1, "Gol evitado": 1}, "rating": 12.8, "acciones": 56}, {"stats": {"Bloqueo": 10, "Pase progresivo": 7, "Pase incompleto": 10, "Disparo afuera": 1, "Despeje": 8, "Mal pase": 6, "Atajada": 2, "Duelo ganado": 9, "Buen pase": 3, "Asistencia": 2, "Intercepcion": 6, "Disparo al arco": 1, "Gol": 1, "Perdida de posesion": 1, "Gol evitado": 1}, "rating": 14.2, "acciones": 68}]}, "ivo": {"team": "Rubios de Moreno", "matches": [{"stats": {"Mal pase": 3, "Gambeta fallida": 1, "Duelo ganado": 3, "Disparo al arco": 4, "Asistencia": 1, "Buen pase": 3, "Recuperacion": 1, "Perdida de posesion": 1, "Pase progresivo": 8, "Pase incompleto": 7, "Atajada": 9, "Bloqueo": 1, "Conduccion progresiva": 1, "Ocasion creada": 3, "Error de gol": 1, "Gol": 1}, "rating": 11.95, "acciones": 48}, {"stats": {"Mal pase": 3, "Gambeta fallida": 2, "Duelo ganado": 3, "Disparo al arco": 4, "Asistencia": 1, "Buen pase": 4, "Intercepcion": 1, "Perdida de posesion": 3, "Pase progresivo": 11, "Pase incompleto": 4, "Atajada": 12, "Bloqueo": 1, "Conduccion progresiva": 2, "Ocasion creada": 3, "Mala resolucion": 1, "Error de gol": 1, "Gambeta exitosa": 1, "Gol": 1}, "rating": 13.2, "acciones": 58}, {"stats": {"Mal pase": 4, "Gambeta fallida": 2, "Duelo ganado": 7, "Disparo al arco": 10, "Asistencia": 1, "Buen pase": 5, "Recuperacion": 1, "Intercepcion": 1, "Perdida de posesion": 3, "Pase progresivo": 11, "Pase incompleto": 9, "Atajada": 12, "Bloqueo": 2, "Conduccion progresiva": 2, "Ocasion creada": 4, "Mala resolucion": 1, "Error de gol": 1, "Gambeta exitosa": 1, "Gol": 2, "Salvada epica": 1}, "rating": 17.05, "acciones": 80}]}};
+const VALUES = {"Gol":1.20,"Asistencia":0.75,"Salvada epica":0.50,"Gol evitado":0.35,"Recuperacion alta":0.30,"Ocasion creada":0.25,"Recuperacion":0.20,"Intercepcion":0.20,"Presion":0.20,"Atajada":0.20,"Gambeta exitosa":0.20,"Disparo al arco":0.20,"Cano":0.20,"Buen pase":0.15,"Duelo ganado":0.15,"Bloqueo":0.15,"Conduccion progresiva":0.15,"Buen control":0.15,"Ejecucion excepcional":0.10,"Despeje":0.10,"Pase progresivo":0.10,"Disparo afuera":0,"Pase incompleto":-0.05,"Perdida de posesion":-0.05,"Falta cometida":-0.05,"Mala resolucion":-0.10,"Gambeta fallida":-0.10,"Mal pase":-0.15,"Burrada no grave":-0.20,"Gran ocasion fallida":-0.30,"Burrada historica":-0.40,"Error de gol":-0.60,"Gol en contra":-1.00};
+const NEG = new Set(Object.keys(VALUES).filter(k=>VALUES[k]<0).concat(["Disparo afuera"]));
+const MIN_PARTIDOS = 2;
+const names = Object.keys(SEASON);
+
+// agregados por jugador
+const AGG = {};
+names.forEach(n=>{
+  const ms = SEASON[n].matches;
+  const totals = {};
+  ms.forEach(m=>{for(const[k,v] of Object.entries(m.stats))totals[k]=(totals[k]||0)+v});
+  const ratings = ms.map(m=>m.rating);
+  const accs = ms.map(m=>m.acciones);
+  AGG[n]={
+    team:SEASON[n].team, pj:ms.length, totals,
+    ratingProm:+(ratings.reduce((a,b)=>a+b,0)/ms.length).toFixed(2),
+    ratingMax:Math.max(...ratings), ratingMin:Math.min(...ratings),
+    accProm:+(accs.reduce((a,b)=>a+b,0)/ms.length).toFixed(1),
+    accTot:accs.reduce((a,b)=>a+b,0),
+    ratings
+  };
+});
+const allStats=[...new Set(names.flatMap(n=>Object.keys(AGG[n].totals)))].sort();
+const totalPartidos=Math.max(...names.map(n=>AGG[n].pj));
+const totalGoles=names.reduce((s,n)=>s+(AGG[n].totals["Gol"]||0),0);
+document.getElementById('sub').textContent = totalPartidos+' partidos · '+names.length+' jugadores · '+totalGoles+' goles en total';
+
+function dot(t){return t==="Polcik SC"?"var(--polcik)":"var(--rubios)"}
+
+// RANKING
+let rankMode='prom';
+function buildRank(){
+  const elig=names.filter(n=>AGG[n].pj>=MIN_PARTIDOS);
+  const few=names.filter(n=>AGG[n].pj<MIN_PARTIDOS);
+  const keyf=n=>rankMode==='prom'?AGG[n].ratingProm:AGG[n].ratings.reduce((a,b)=>a+b,0);
+  elig.sort((a,b)=>keyf(b)-keyf(a));
+  document.getElementById('rankList').innerHTML=elig.map((n,i)=>{
+    const a=AGG[n];const val=rankMode==='prom'?a.ratingProm.toFixed(2):a.ratings.reduce((x,y)=>x+y,0).toFixed(1);
+    const pc=i===0?'t1':i===1?'t2':i===2?'t3':'';
+    return `<div class="row" onclick="openP('${n}')"><div class="pos ${pc}">${i+1}</div><div class="dot" style="background:${dot(a.team)}"></div><div class="name">${n} <span class="sub">· ${a.team}</span></div><div><div class="big">${val}</div><div class="sm">${a.pj} PJ${rankMode==='prom'?' · prom':' · total'}</div></div></div>`;
+  }).join('');
+  document.getElementById('rankFew').innerHTML = few.length?`<div class="lbl">Menos de ${MIN_PARTIDOS} partidos</div>`+few.map(n=>{const a=AGG[n];return `<div class="row" onclick="openP('${n}')"><div class="pos">–</div><div class="dot" style="background:${dot(a.team)}"></div><div class="name">${n} <span class="sub">· ${a.team}</span></div><div><div class="big">${a.ratingProm.toFixed(2)}</div><div class="sm">${a.pj} PJ</div></div></div>`}).join(''):'';
+}
+
+// GOLEADORES
+function buildGol(){
+  const rows=names.map(n=>({n,g:AGG[n].totals["Gol"]||0,a:AGG[n].totals["Asistencia"]||0,pj:AGG[n].pj})).sort((x,y)=>(y.g+y.a)-(x.g+x.a)||y.g-x.g);
+  document.getElementById('golTable').innerHTML=rows.map((r,i)=>`<tr onclick="openP('${r.n}')" style="cursor:pointer"><td>${i+1}</td><td>${r.n}</td><td class="num">${r.g}</td><td class="num">${r.a}</td><td class="num" style="color:var(--accent);font-weight:600">${r.g+r.a}</td><td class="num">${(r.g/r.pj).toFixed(2)}</td></tr>`).join('');
+}
+
+// LIDERES por stat
+let lidMode='tot';
+function buildStatSel(){const s=document.getElementById('statSel');s.innerHTML=allStats.map(x=>`<option>${x}</option>`).join('');s.value='Gol';s.onchange=drawLid;drawLid();}
+function drawLid(){
+  const stat=document.getElementById('statSel').value;
+  const rows=names.map(n=>({n,tot:AGG[n].totals[stat]||0,prom:(AGG[n].totals[stat]||0)/AGG[n].pj})).filter(r=>r.tot>0);
+  rows.sort((a,b)=>lidMode==='tot'?b.tot-a.tot:b.prom-a.prom);
+  const max=rows.length?(lidMode==='tot'?rows[0].tot:rows[0].prom):1;
+  document.getElementById('lideresList').innerHTML=rows.length?rows.map(r=>{
+    const v=lidMode==='tot'?r.tot:r.prom.toFixed(2);const pct=(lidMode==='tot'?r.tot:r.prom)/max*100;
+    return `<div class="barrow"><div class="barlab"><span>${r.n}</span><span class="v">${v}</span></div><div class="track"><div class="fill" style="width:${pct}%;background:${NEG.has(stat)?'var(--neg)':dot(AGG[r.n].team)}"></div></div></div>`;
+  }).join(''):'<p style="color:var(--txt-dim)">Sin registros.</p>';
+}
+
+// COMPARAR
+function buildCmp(){
+  const a=document.getElementById('cmpA'),b=document.getElementById('cmpB');
+  a.innerHTML=b.innerHTML=names.map(n=>`<option>${n}</option>`).join('');
+  a.value=names[0];b.value=names[1];a.onchange=b.onchange=drawCmp;drawCmp();
+}
+function drawCmp(){
+  const A=document.getElementById('cmpA').value,B=document.getElementById('cmpB').value;
+  const metrics=[["Rating prom",AGG[A].ratingProm,AGG[B].ratingProm],["Partidos",AGG[A].pj,AGG[B].pj],["Goles",AGG[A].totals["Gol"]||0,AGG[B].totals["Gol"]||0],["Asist.",AGG[A].totals["Asistencia"]||0,AGG[B].totals["Asistencia"]||0],["Acc/part",AGG[A].accProm,AGG[B].accProm]];
+  document.getElementById('cmpOut').innerHTML=`<div style="display:flex;justify-content:space-between;margin:10px 0;font-weight:700"><span style="color:${dot(AGG[A].team)}">${A}</span><span style="color:${dot(AGG[B].team)}">${B}</span></div>`+metrics.map(([lab,va,vb])=>{
+    const tot=va+vb||1;const pa=va/tot*100;
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span class="v" style="font-family:var(--mono);font-weight:600">${va}</span><span style="color:var(--txt-dim)">${lab}</span><span class="v" style="font-family:var(--mono);font-weight:600">${vb}</span></div><div class="track" style="display:flex"><div style="width:${pa}%;background:${dot(AGG[A].team)};height:100%"></div><div style="width:${100-pa}%;background:${dot(AGG[B].team)};height:100%"></div></div></div>`;
+  }).join('');
+}
+
+// FICHA
+function rankOf(n,stat){const rows=names.map(x=>({x,v:AGG[x].totals[stat]||0})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);const i=rows.findIndex(r=>r.x===n);return i<0?null:{pos:i+1,total:rows.length}}
+function openP(n){
+  const a=AGG[n];
+  const maxR=Math.max(...a.ratings);
+  const spark=a.ratings.map((r,i)=>`<div class="sparkbar" style="height:${r/maxR*100}%"><span>${r.toFixed(1)}</span><small>P${i+1}</small></div>`).join('');
+  const entries=Object.entries(a.totals).sort((x,y)=>y[1]-x[1]);
+  const pos=entries.filter(([k])=>!NEG.has(k)),neg=entries.filter(([k])=>NEG.has(k));
+  const fila=([k,v])=>{const r=rankOf(n,k);const best=r&&r.pos===1;return `<div class="fila"><div>${k}</div><div class="fila-r"><span class="fila-rk ${best?'best':''}">${r?r.pos+'º/'+r.total:'-'}</span><span class="fila-c" style="color:${NEG.has(k)?'var(--neg)':'var(--txt)'}">${v} <span style="color:var(--txt-dim);font-size:11px">(${(v/a.pj).toFixed(1)}/p)</span></span></div></div>`};
+  document.getElementById('modal').innerHTML=`
+    <div class="mhead"><div class="mname">${n}</div><button class="mclose" onclick="closeM()">×</button></div>
+    <div style="color:var(--txt-dim);font-size:13px">${a.team}</div>
+    <div class="mstats">
+      <div class="mstat"><div class="n" style="color:var(--accent)">${a.ratingProm.toFixed(2)}</div><div class="l">Rating prom</div></div>
+      <div class="mstat"><div class="n">${a.pj}</div><div class="l">Partidos</div></div>
+      <div class="mstat"><div class="n">${a.accProm}</div><div class="l">Acc/partido</div></div>
+      <div class="mstat"><div class="n" style="color:var(--accent)">${a.ratingMax.toFixed(1)}</div><div class="l">Mejor</div></div>
+      <div class="mstat"><div class="n" style="color:var(--neg)">${a.ratingMin.toFixed(1)}</div><div class="l">Peor</div></div>
+      <div class="mstat"><div class="n">${a.accTot}</div><div class="l">Acc totales</div></div>
+    </div>
+    <div class="lbl">Evolución del rating por partido</div>
+    <div class="spark">${spark}</div>
+    <div class="lbl">Aportes (total y promedio)</div>${pos.map(fila).join('')}
+    ${neg.length?'<div class="lbl">Errores</div>'+neg.map(fila).join(''):''}`;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeM(){document.getElementById('modalBg').classList.remove('open')}
+document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')closeM()};
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.p).classList.add('active')});
+document.querySelectorAll('#ranking .toggle button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#ranking .toggle button').forEach(x=>x.classList.remove('active'));b.classList.add('active');rankMode=b.dataset.m;buildRank()});
+document.querySelectorAll('#lideres .toggle button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#lideres .toggle button').forEach(x=>x.classList.remove('active'));b.classList.add('active');lidMode=b.dataset.lm;drawLid()});
+
+buildRank();buildGol();buildStatSel();buildCmp();
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados del partido</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --surface:#161b22;
+    --surface-2:#1c2430;
+    --line:#2a3441;
+    --txt:#e6edf3;
+    --txt-dim:#8b98a5;
+    --accent:#4cc38a;
+    --accent-dim:#2ea043;
+    --neg:#f0616d;
+    --pos:#4cc38a;
+    --polcik:#4c8cff;
+    --rubios:#e8a13a;
+    --radius:12px;
+    --font:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:var(--font);padding:16px;max-width:720px;margin:0 auto;font-size:15px;-webkit-font-smoothing:antialiased}
+
+  /* Header / scoreboard */
+  .scoreboard{background:linear-gradient(160deg,var(--surface) 0%,var(--surface-2) 100%);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+  .score-teams{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .team-block{flex:1;text-align:center}
+  .team-name{font-size:13px;color:var(--txt-dim);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+  .team-name.polcik{color:var(--polcik)}
+  .team-name.rubios{color:var(--rubios)}
+  .score{font-family:var(--mono);font-size:44px;font-weight:600;line-height:1}
+  .score-sep{color:var(--txt-dim);font-size:24px;font-family:var(--mono)}
+  .match-meta{text-align:center;margin-top:12px;font-size:12px;color:var(--txt-dim)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:4px;margin-bottom:16px}
+  .tab{flex:1;padding:10px 8px;text-align:center;font-size:13px;font-weight:600;color:var(--txt-dim);background:none;border:none;border-radius:8px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+  .tab.active{background:var(--surface-2);color:var(--txt)}
+  .tab:hover:not(.active){color:var(--txt)}
+
+  .panel{display:none;animation:fade .2s}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* Ranking */
+  .rank-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+  .rank-row:hover{border-color:var(--accent-dim)}
+  .rank-pos{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--txt-dim);width:24px;text-align:center}
+  .rank-pos.top1{color:#ffd countenance}
+  .rank-pos.top1{color:#f5c451}
+  .rank-pos.top2{color:#c4cdd6}
+  .rank-pos.top3{color:#cd8a52}
+  .rank-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .rank-name{flex:1;font-weight:600}
+  .rank-sub{font-size:12px;color:var(--txt-dim);font-weight:400}
+  .rank-rating{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--accent)}
+  .rank-acc{font-size:11px;color:var(--txt-dim);text-align:right}
+
+  /* Comparativa */
+  .cmp-controls{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+  .cmp-controls label{font-size:12px;color:var(--txt-dim);font-weight:600}
+  select{background:var(--surface-2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:13px;font-weight:600}
+  .cmp-bar-row{margin-bottom:10px}
+  .cmp-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .cmp-bar-label .val{font-family:var(--mono);font-weight:600}
+  .cmp-track{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;position:relative}
+  .cmp-fill{height:100%;border-radius:4px;transition:width .4s}
+  .cmp-you{color:var(--accent)}
+
+  /* Vista por stat / tops */
+  .stat-select{margin-bottom:12px;width:100%}
+  .top-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:5px}
+  .top-medal{font-family:var(--mono);font-weight:600;width:22px;text-align:center;color:var(--txt-dim)}
+  .top-name{flex:1;font-weight:600}
+  .top-val{font-family:var(--mono);font-weight:600;font-size:16px}
+  .top-barwrap{flex:2;max-width:180px}
+  .top-track{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+  .top-fill{height:100%;background:var(--accent);border-radius:3px}
+
+  /* Modal ficha jugador */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;align-items:flex-end;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:720px;max-height:85vh;overflow-y:auto;padding:20px;animation:slideup .25s}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .modal-name{font-size:22px;font-weight:700}
+  .modal-close{background:var(--surface-2);border:none;color:var(--txt);width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer}
+  .modal-rating{font-family:var(--mono);font-size:32px;font-weight:600;color:var(--accent);margin:8px 0 2px}
+  .modal-team{font-size:13px;color:var(--txt-dim);margin-bottom:16px}
+  .fila{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .fila:last-child{border:none}
+  .fila-stat{font-size:14px}
+  .fila-right{display:flex;align-items:center;gap:12px}
+  .fila-count{font-family:var(--mono);font-weight:600;font-size:15px;min-width:28px;text-align:right}
+  .fila-rank{font-size:11px;color:var(--txt-dim);background:var(--surface-2);padding:2px 7px;border-radius:20px;min-width:52px;text-align:center}
+  .fila-rank.best{background:rgba(76,195,138,.15);color:var(--accent)}
+  .section-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt-dim);font-weight:600;margin:16px 0 6px}
+</style>
+</head>
+<body>
+
+<div class="scoreboard">
+  <div class="score-teams">
+    <div class="team-block"><div class="team-name polcik">Polcik SC</div><div class="score">13</div></div>
+    <div class="score-sep">–</div>
+    <div class="team-block"><div class="team-name rubios">Rubios de Moreno</div><div class="score">11</div></div>
+  </div>
+  <div class="match-meta">736 acciones registradas · 10 jugadores</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-panel="ranking">Ranking</button>
+  <button class="tab" data-panel="comparativa">Comparar</button>
+  <button class="tab" data-panel="tops">Por estadística</button>
+</div>
+
+<div id="ranking" class="panel active"></div>
+<div id="comparativa" class="panel">
+  <div class="cmp-controls">
+    <label>Estadística:</label>
+    <select id="cmpStat"></select>
+  </div>
+  <div id="cmpBars"></div>
+</div>
+<div id="tops" class="panel">
+  <select id="topStat" class="stat-select"></select>
+  <div id="topList"></div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const DATA = {"diego":{"team":"Polcik SC","rating":24.55,"acciones":121,"stats":{"Disparo al arco":14,"Atajada":5,"Pase incompleto":13,"Buen pase":12,"Ocasion creada":5,"Disparo afuera":5,"Intercepcion":10,"Conduccion progresiva":5,"Pase progresivo":20,"Duelo ganado":11,"Asistencia":3,"Recuperacion":8,"Mal pase":4,"Gambeta exitosa":3,"Gol":2,"Gran ocasion fallida":1}},"nahuel":{"team":"Polcik SC","rating":13.75,"acciones":74,"stats":{"Mal pase":6,"Disparo afuera":5,"Pase incompleto":12,"Buen pase":7,"Asistencia":2,"Bloqueo":1,"Duelo ganado":5,"Gambeta exitosa":4,"Intercepcion":5,"Recuperacion":3,"Ocasion creada":2,"Disparo al arco":6,"Conduccion progresiva":1,"Pase progresivo":11,"Atajada":2,"Perdida de posesion":1,"Despeje":1}},"viktor":{"team":"Polcik SC","rating":18.85,"acciones":68,"stats":{"Pase incompleto":8,"Recuperacion":1,"Duelo ganado":6,"Disparo al arco":7,"Intercepcion":7,"Disparo afuera":6,"Gol":6,"Buen pase":3,"Ocasion creada":1,"Recuperacion alta":1,"Gambeta exitosa":1,"Gran ocasion fallida":1,"Mal pase":4,"Atajada":2,"Perdida de posesion":1,"Pase progresivo":3,"Bloqueo":4,"Conduccion progresiva":2,"Ejecucion excepcional":1,"Presion":1,"Despeje":1,"Mala resolucion":1}},"ayrton":{"team":"Polcik SC","rating":12.55,"acciones":55,"stats":{"Intercepcion":2,"Pase incompleto":12,"Duelo ganado":7,"Buen pase":2,"Mal pase":2,"Disparo al arco":4,"Burrada historica":3,"Ocasion creada":3,"Asistencia":3,"Pase progresivo":5,"Gol":3,"Mala resolucion":2,"Recuperacion":1,"Atajada":1,"Gol en contra":1,"Disparo afuera":3,"Burrada no grave":1}},"marian":{"team":"Polcik SC","rating":17.6,"acciones":69,"stats":{"Gol":2,"Pase progresivo":14,"Falta cometida":2,"Recuperacion alta":1,"Intercepcion":4,"Gambeta exitosa":1,"Duelo ganado":14,"Disparo al arco":9,"Buen pase":1,"Bloqueo":2,"Ocasion creada":3,"Atajada":4,"Pase incompleto":5,"Gol evitado":2,"Recuperacion":2,"Disparo afuera":2,"Mal pase":1}},"fede":{"team":"Rubios de Moreno","rating":17.0,"acciones":62,"stats":{"Gambeta exitosa":6,"Pase progresivo":7,"Gol":2,"Intercepcion":4,"Pase incompleto":4,"Mal pase":3,"Error de gol":1,"Atajada":8,"Perdida de posesion":3,"Duelo ganado":9,"Buen pase":4,"Asistencia":3,"Ocasion creada":2,"Disparo al arco":2,"Recuperacion":2,"Cano":1,"Disparo afuera":1}},"nacho":{"team":"Rubios de Moreno","rating":12.2,"acciones":57,"stats":{"Bloqueo":5,"Pase incompleto":7,"Intercepcion":6,"Atajada":1,"Error de gol":1,"Mal pase":4,"Duelo ganado":12,"Disparo al arco":4,"Gol":2,"Pase progresivo":3,"Gran ocasion fallida":1,"Despeje":2,"Buen pase":2,"Ocasion creada":1,"Gambeta exitosa":1,"Cano":1,"Disparo afuera":1,"Perdida de posesion":1,"Mala resolucion":1,"Burrada historica":1}},"Tuti":{"team":"Rubios de Moreno","rating":14.9,"acciones":82,"stats":{"Mal pase":11,"Disparo al arco":5,"Pase incompleto":8,"Intercepcion":8,"Duelo ganado":14,"Pase progresivo":5,"Bloqueo":4,"Recuperacion":4,"Perdida de posesion":2,"Burrada historica":1,"Gol":3,"Disparo afuera":4,"Buen pase":4,"Ocasion creada":1,"Atajada":2,"Conduccion progresiva":1,"Gol evitado":1,"Gran ocasion fallida":2,"Cano":1,"Mala resolucion":1}},"Agus":{"team":"Rubios de Moreno","rating":14.2,"acciones":68,"stats":{"Bloqueo":10,"Pase progresivo":7,"Pase incompleto":10,"Disparo afuera":1,"Despeje":8,"Mal pase":6,"Atajada":2,"Duelo ganado":9,"Buen pase":3,"Asistencia":2,"Intercepcion":6,"Disparo al arco":1,"Gol":1,"Perdida de posesion":1,"Gol evitado":1}},"ivo":{"team":"Rubios de Moreno","rating":17.05,"acciones":80,"stats":{"Mal pase":4,"Gambeta fallida":2,"Duelo ganado":7,"Disparo al arco":10,"Asistencia":1,"Buen pase":5,"Recuperacion":1,"Intercepcion":1,"Perdida de posesion":3,"Pase progresivo":11,"Pase incompleto":9,"Atajada":12,"Bloqueo":2,"Conduccion progresiva":2,"Ocasion creada":4,"Mala resolucion":1,"Error de gol":1,"Gambeta exitosa":1,"Gol":2,"Salvada epica":1}}};
+
+const NEG = new Set(["Mal pase","Pase incompleto","Gambeta fallida","Gran ocasion fallida","Perdida de posesion","Mala resolucion","Burrada no grave","Burrada historica","Error de gol","Gol en contra","Falta cometida","Disparo afuera"]);
+
+const names = Object.keys(DATA);
+// todas las stats existentes
+const allStats = [...new Set(names.flatMap(n=>Object.keys(DATA[n].stats)))].sort();
+
+function teamDot(team){return team==="Polcik SC"?"var(--polcik)":"var(--rubios)"}
+
+/* ---- RANKING ---- */
+function buildRanking(){
+  const sorted=[...names].sort((a,b)=>DATA[b].rating-DATA[a].rating);
+  const el=document.getElementById('ranking');
+  el.innerHTML=sorted.map((n,i)=>{
+    const d=DATA[n];
+    const posCls=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    return `<div class="rank-row" onclick="openPlayer('${n}')">
+      <div class="rank-pos ${posCls}">${i+1}</div>
+      <div class="rank-dot" style="background:${teamDot(d.team)}"></div>
+      <div class="rank-name">${n} <span class="rank-sub">· ${d.team}</span></div>
+      <div><div class="rank-rating">${d.rating.toFixed(2)}</div><div class="rank-acc">${d.acciones} acc.</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- COMPARATIVA ---- */
+function buildCmpSelect(){
+  const sel=document.getElementById('cmpStat');
+  sel.innerHTML=['Rating','Acciones',...allStats].map(s=>`<option>${s}</option>`).join('');
+  sel.onchange=drawCmp; drawCmp();
+}
+function getVal(n,stat){
+  if(stat==='Rating')return DATA[n].rating;
+  if(stat==='Acciones')return DATA[n].acciones;
+  return DATA[n].stats[stat]||0;
+}
+function drawCmp(){
+  const stat=document.getElementById('cmpStat').value;
+  const rows=[...names].map(n=>({n,v:getVal(n,stat)})).sort((a,b)=>b.v-a.v);
+  const max=Math.max(...rows.map(r=>Math.abs(r.v)),1);
+  const neg=NEG.has(stat);
+  document.getElementById('cmpBars').innerHTML=rows.map(r=>{
+    const pct=Math.abs(r.v)/max*100;
+    const color=neg?'var(--neg)':teamDot(DATA[r.n].team);
+    return `<div class="cmp-bar-row">
+      <div class="cmp-bar-label"><span>${r.n}</span><span class="val">${r.v}</span></div>
+      <div class="cmp-track"><div class="cmp-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- TOPS por estadística ---- */
+function buildTopSelect(){
+  const sel=document.getElementById('topStat');
+  sel.innerHTML=allStats.map(s=>`<option>${s}</option>`).join('');
+  sel.onchange=drawTop;
+  sel.value='Gol'; drawTop();
+}
+function drawTop(){
+  const stat=document.getElementById('topStat').value;
+  const rows=[...names].map(n=>({n,v:DATA[n].stats[stat]||0})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);
+  const max=rows.length?rows[0].v:1;
+  const medals=['①','②','③'];
+  document.getElementById('topList').innerHTML = rows.length? rows.map((r,i)=>`
+    <div class="top-row">
+      <div class="top-medal">${i<3?medals[i]:i+1}</div>
+      <div class="top-name">${r.n}</div>
+      <div class="top-barwrap"><div class="top-track"><div class="top-fill" style="width:${r.v/max*100}%;background:${NEG.has(stat)?'var(--neg)':'var(--accent)'}"></div></div></div>
+      <div class="top-val">${r.v}</div>
+    </div>`).join('') : '<p style="color:var(--txt-dim);padding:12px">Nadie registró esta acción.</p>';
+}
+
+/* ---- FICHA JUGADOR (modal) ---- */
+function rankOf(n,stat){
+  const rows=[...names].map(x=>({x,v:DATA[x].stats[stat]||0})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);
+  const idx=rows.findIndex(r=>r.x===n);
+  return idx<0?null:{pos:idx+1,total:rows.length};
+}
+function openPlayer(n){
+  const d=DATA[n];
+  const entries=Object.entries(d.stats).sort((a,b)=>b[1]-a[1]);
+  const pos=entries.filter(([k])=>!NEG.has(k));
+  const neg=entries.filter(([k])=>NEG.has(k));
+  const fila=([k,v])=>{
+    const r=rankOf(n,k);
+    const best=r&&r.pos===1;
+    return `<div class="fila"><div class="fila-stat">${k}</div><div class="fila-right">
+      <span class="fila-rank ${best?'best':''}">${r?`${r.pos}º de ${r.total}`:'-'}</span>
+      <span class="fila-count" style="color:${NEG.has(k)?'var(--neg)':'var(--txt)'}">${v}</span>
+    </div></div>`;
+  };
+  document.getElementById('modal').innerHTML=`
+    <div class="modal-head"><div class="modal-name">${n}</div><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-rating">${d.rating.toFixed(2)}</div>
+    <div class="modal-team">${d.team} · ${d.acciones} acciones · rating del partido</div>
+    <div class="section-lbl">Aportes</div>${pos.map(fila).join('')}
+    ${neg.length?`<div class="section-lbl">Errores</div>${neg.map(fila).join('')}`:''}
+  `;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('open')}
+document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()};
+
+/* ---- Tabs ---- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.panel).classList.add('active');
+});
+
+buildRanking();buildCmpSelect();buildTopSelect();
+</script>
+</body>
+</html>
