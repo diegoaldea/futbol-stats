@@ -27,6 +27,6 @@ class Stat extends Model
 
     public function category()
     {
-        return $this->belongsTo(StatCategory::class);
+        return $this->belongsTo(StatCategory::class, 'stat_category_id');
     }
 }
