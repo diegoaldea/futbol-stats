@@ -291,6 +291,8 @@ class GameController extends Controller
                 'player' => $event->gamePlayer->player->name,
                 'stat' => $event->stat->name,
                 'team' => $event->gamePlayer->team,
+                'gamePlayerId' => $event->game_player_id,
+                'statId' => $event->stat_id,
             ]);
 
         return Inertia::render('Games/Summary', [
