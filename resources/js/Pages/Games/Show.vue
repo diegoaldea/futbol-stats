@@ -98,6 +98,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { momentumRating } from '@/rating';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import Scoreboard from '@/Components/Scoreboard.vue';
 import StatHistory from '@/Components/StatHistory.vue';
@@ -148,16 +149,24 @@ const teamBName = computed(() => props.game.team_b_name || 'Equipo B');
 const isFinished = computed(() => !!props.game.finished_at);
 
 // --- Calificación parcial (rating) ---
-const BASE_SCORE = 6.0;
 const ratingsVisible = ref(true); // estado del switch general
 const playerVisible = ref({}); // estado individual por jugador
 
+// Puntos de cada stat por id (para el momentum)
+const statPointsById = computed(() => {
+    const m = {};
+    props.stats.forEach((s) => {
+        m[s.id] = Number(s.points);
+    });
+    return m;
+});
+
+// Rating "Momentum": recorre las acciones del jugador EN ORDEN (historial)
 function playerRating(gamePlayerId) {
-    const total = props.stats.reduce(
-        (sum, stat) => sum + getPlayerStat(gamePlayerId, stat.id) * Number(stat.points),
-        BASE_SCORE
-    );
-    return Number(total.toFixed(2));
+    const points = history.value
+        .filter((e) => e.gamePlayerId === gamePlayerId)
+        .map((e) => statPointsById.value[e.statId] ?? 0);
+    return momentumRating(points);
 }
 
 // Si el jugador no tiene estado propio, sigue al switch general

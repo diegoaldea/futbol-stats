@@ -243,6 +243,7 @@
             :player="selectedPlayer"
             :players="players"
             :stat-meta="statMeta"
+            :history="history"
             @close="selectedPlayer = null"
         />
     </div>
@@ -250,6 +251,7 @@
 
 <script setup>
 import { computed, ref } from 'vue';
+import { matchRating, momentumRating } from '@/rating';
 import Breadcrumb from '@/Components/Breadcrumb.vue';
 import StatTimeline from '@/Components/StatTimeline.vue';
 import PlayerStatsModal from '@/Components/PlayerStatsModal.vue';
@@ -283,17 +285,6 @@ function teamBar(team) {
 
 const BASE_SCORE = 6.0;
 
-// --- Calificación 0-10 (nueva, para comparar; NO reemplaza el rating total) ---
-const RATING_BASE = 6.0; // neto 0 -> 6 (rendimiento neutro)
-const RATING_MAX = 10.0; // tope: nunca supera 10
-const RATING_FLOOR = 1.0; // piso: nunca baja de acá
-const RATING_UMBRAL = 20; // neto de "un partido de 10" (configurable)
-
-function calcRating(neto) {
-    const r = RATING_BASE + (RATING_MAX - RATING_BASE) * (neto / RATING_UMBRAL);
-    return Number(Math.min(RATING_MAX, Math.max(RATING_FLOOR, r)).toFixed(2));
-}
-
 function playerScore(gamePlayer) {
     const total = (gamePlayer.stats ?? []).reduce(
         (sum, s) => sum + s.value * Number(s.stat.points),
@@ -326,8 +317,17 @@ const players = computed(() => {
         ...build(props.teamB, 'b', teamBName.value),
     ];
 
-    // Calificación 0-10 a partir del neto (rating total - base)
-    return base.map((p) => ({ ...p, calificacion: calcRating(p.rating - BASE_SCORE) }));
+    // Calificación 0-10 y Momentum (con inercia, sobre el historial en orden)
+    return base.map((p) => {
+        const points = props.history
+            .filter((e) => e.gamePlayerId === p.id)
+            .map((e) => statMeta.value[e.stat]?.points ?? 0);
+        return {
+            ...p,
+            calificacion: matchRating(p.rating - BASE_SCORE, p.actions),
+            momentum: momentumRating(points),
+        };
+    });
 });
 
 // Metadata de cada stat (puntos + categoría)
@@ -360,6 +360,7 @@ function sumStats(p, names) {
 const rankMetrics = {
     Rating: (p) => p.rating,
     'Calificación (0-10)': (p) => p.calificacion,
+    Momentum: (p) => p.momentum,
     Acciones: (p) => p.actions,
     Goles: (p) => p.stats['Gol'] ?? 0,
     Asistencias: (p) => p.stats['Asistencia'] ?? 0,
@@ -419,7 +420,7 @@ const teamPct = computed(() => {
 
 // --- Comparar (jugadores elegidos, por una stat) ---
 const cmpStat = ref('Rating');
-const cmpOptions = computed(() => ['Rating', 'Calificación (0-10)', 'Acciones', ...allStats.value]);
+const cmpOptions = computed(() => ['Rating', 'Calificación (0-10)', 'Momentum', 'Acciones', ...allStats.value]);
 const selectedIds = ref(players.value.map((p) => p.id));
 
 function togglePlayer(id) {
@@ -431,6 +432,7 @@ function togglePlayer(id) {
 function cmpValue(p, stat) {
     if (stat === 'Rating') return p.rating;
     if (stat === 'Calificación (0-10)') return p.calificacion;
+    if (stat === 'Momentum') return p.momentum;
     if (stat === 'Acciones') return p.actions;
     return p.stats[stat] ?? 0;
 }
