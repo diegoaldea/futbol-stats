@@ -17,6 +17,14 @@
                     </button>
 
                     <Link
+                        v-if="isGuest"
+                        :href="route('register')"
+                        class="rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+                    >
+                        Registrarse
+                    </Link>
+
+                    <Link
                         v-if="!isGuest"
                         :href="route('rendimiento')"
                         class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
